@@ -47,38 +47,44 @@ function setup() {
 }
 
 
-function newLines(){ // - Setting up button.mousePressed
-  userLines = userInput.value(); // - Store user's input
-  userInput.value(''); // - Reset bar 
-  poem.push(userLines); // - Print original line
+function newLines() {
+  userLines = userInput.value();
+  userInput.value('');
+  poem.push(userLines); // Always push original line
 
-  let words = RiTa.tokenize(userLines); // - User input as an array
-  let last = words.length - 1 // - Select last word from array
-  let rhymes = RiTa.rhymesSync(words[last]) // - Array of rhymes for last word
-  
-  if (rhymes.length === 0){ // - If there are no rhymes
-    poem.push(userLines) // - Push user input to poem
-  } else { // - If there are rhymes
-    let changedWord = random(rhymes); // - Select random rhyme to substitute original word
-    words[last] = changedWord; // - Replace last word with random rhyme
-    userLines = RiTa.untokenize(words); // - Return user input to string
-    poem.push(userLines) // - Push input into poem array
+  let words = RiTa.tokenize(userLines);
+  let last = words.length - 1;
+  let lastWord = words[last].replace(/[.,!?;:]+$/, '').toLowerCase();
+
+  let rhymes = [];
+  try {
+    rhymes = RiTa.rhymesSync(lastWord);
+  } catch (err) {
+    console.error("Rhyme error for:", lastWord, err);
   }
 
-  let modifiedInput = words.join(' '); // - Join the words to form a string
-  // Make the third line end with the same word as the second line
-  let lastWordSecondLine = modifiedInput.split(' ').pop(); // - Get the last word of the second line
+  if (rhymes.length > 0) {
+    let changedWord = random(rhymes);
+    words[last] = changedWord;
+  }
+
+  let rhymedLine = RiTa.untokenize(words);
+  poem.push(rhymedLine); // Always push second line
+
+  // Third line: generated with verbs changed
+  let lastWordSecondLine = rhymedLine.split(' ').pop();
   response = '';
-  for (x = 0; x < words.length -1; x++){ // - Move through words array 
-    if (RiTa.isVerb(words[x])){ // - If there are verbs
-      response += RiTa.randomWord({pos: "vbd"}) // - Add random verb
-    } else { // - If no verbs are found
-      response += words[x]; // - Keep word in response
+  for (let x = 0; x < words.length - 1; x++) {
+    if (RiTa.isVerb(words[x])) {
+      response += RiTa.randomWord({ pos: "vbd" }) + ' ';
+    } else {
+      response += words[x] + ' ';
     }
-    response += ' '; // - Add space between words
   }
-  response += lastWordSecondLine; // - Add the last word from the second line to the third line
-  poem.push(response); // - Push machine text (response) to poem
+  response += lastWordSecondLine;
+  poem.push(response); // Machine-generated line
+
+  console.log("Poem lines:", poem.length, poem); // For debug
 }
 
 function writePoem(){ // setting up poem drawing
